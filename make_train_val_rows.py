@@ -130,30 +130,26 @@ def main():
     # 3) Split into train / val
     if args.split == "time":
         t1s = latest_target_waves(recs)
-        latest_t1 = t1s[-1]  # hold out the latest target wave for validation
+        latest_t1 = t1s[-1]  # hold out latest target wave for validation
         train_rows, val_rows = time_based_split(row_list, latest_t1)
+        # ---- Normalize to dicts for writing ----
+        train_rows = [r if isinstance(r, dict) else r[1] for r in train_rows]
+        val_rows   = [r if isinstance(r, dict) else r[1] for r in val_rows]
     else:
-        # random split
+        # random split returns dicts already
         _, only_rows = zip(*row_list) if row_list else ([], [])
         train_rows, val_rows = random_split(list(only_rows), val_ratio=args.val_ratio)
 
     # 4) Write outputs
     with open(args.train_out, "w", encoding="utf-8") as f:
-        for _, r in (train_rows if args.split == "time" else []):
+        for r in train_rows:
             f.write(json.dumps(r) + "\n")
-        if args.split == "random":
-            for r in train_rows:
-                f.write(json.dumps(r) + "\n")
 
     with open(args.val_out, "w", encoding="utf-8") as f:
-        for _, r in (val_rows if args.split == "time" else []):
+        for r in val_rows:
             f.write(json.dumps(r) + "\n")
-        if args.split == "random":
-            for r in val_rows:
-                f.write(json.dumps(r) + "\n")
 
-    print(f"Wrote {len(train_rows if args.split=='time' else train_rows)} train rows "
-          f"and {len(val_rows if args.split=='time' else val_rows)} val rows.")
+    print(f"Wrote {len(train_rows)} train rows and {len(val_rows)} val rows.")
 
 if __name__ == "__main__":
     main()
